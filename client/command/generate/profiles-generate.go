@@ -29,8 +29,8 @@ import (
 	"github.com/bishopfox/sliver/client/console"
 )
 
-// ProfilesGenerateCmd - Generate an implant binary based on a profile
-func ProfilesGenerateCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []string) {
+// ProfilesGenerateCmd - Generate an implant binary based on a profile.
+func ProfilesGenerateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	var name string
 	if len(args) > 0 {
 		name = args[0]
@@ -57,7 +57,7 @@ func ProfilesGenerateCmd(cmd *cobra.Command, con *console.SliverConsoleClient, a
 		profile.Config.Name = buildImplantName(implantFile.Name)
 		_, err = con.Rpc.SaveImplantProfile(context.Background(), profile)
 		if err != nil {
-			con.PrintErrorf("could not update implant profile: %v\n", err)
+			con.PrintErrorf("could not update implant profile: %v\n", con.UnwrapServerErr(err))
 			return
 		}
 	} else {

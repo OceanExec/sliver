@@ -3,21 +3,25 @@ package generate
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/rsteube/carapace"
+	"github.com/rsteube/carapace/pkg/cache"
+	"github.com/rsteube/carapace/pkg/style"
 
+	"github.com/bishopfox/sliver/client/command/completers"
 	"github.com/bishopfox/sliver/client/console"
 	"github.com/bishopfox/sliver/protobuf/clientpb"
 	"github.com/bishopfox/sliver/protobuf/commonpb"
 )
 
-// GetSliverBinary - Get the binary of an implant based on it's profile
-func GetSliverBinary(profile *clientpb.ImplantProfile, con *console.SliverConsoleClient) ([]byte, error) {
+// GetSliverBinary - Get the binary of an implant based on it's profile.
+func GetSliverBinary(profile *clientpb.ImplantProfile, con *console.SliverClient) ([]byte, error) {
 	var data []byte
 	// get implant builds
 	builds, err := con.Rpc.ImplantBuilds(context.Background(), &commonpb.Empty{})
 	if err != nil {
-		return data, err
+		return data, con.UnwrapServerErr(err)
 	}
 
 	implantName := buildImplantName(profile.GetConfig().GetFileName())
@@ -35,14 +39,14 @@ func GetSliverBinary(profile *clientpb.ImplantProfile, con *console.SliverConsol
 		<-ctrl
 		if err != nil {
 			con.PrintErrorf("Error generating implant\n")
-			return data, err
+			return data, con.UnwrapServerErr(err)
 		}
 		data = generated.GetFile().GetData()
 		profile.Config.FileName = generated.File.Name
 		_, err = con.Rpc.SaveImplantProfile(context.Background(), profile)
 		if err != nil {
 			con.PrintErrorf("Error updating implant profile\n")
-			return data, err
+			return data, con.UnwrapServerErr(err)
 		}
 	} else {
 		// Found a build, reuse that one
@@ -51,7 +55,7 @@ func GetSliverBinary(profile *clientpb.ImplantProfile, con *console.SliverConsol
 			ImplantName: implantName,
 		})
 		if err != nil {
-			return data, err
+			return data, con.UnwrapServerErr(err)
 		}
 		data = regenerate.GetFile().GetData()
 	}
@@ -59,11 +63,15 @@ func GetSliverBinary(profile *clientpb.ImplantProfile, con *console.SliverConsol
 }
 
 // FormatCompleter completes builds' architectures.
-func ArchCompleter(con *console.SliverConsoleClient) carapace.Action {
+func ArchCompleter(con *console.SliverClient) carapace.Action {
 	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
+		}
+
 		compiler, err := con.Rpc.GetCompiler(context.Background(), &commonpb.Empty{})
 		if err != nil {
-			return carapace.ActionMessage("No compiler info: %s", err.Error())
+			return carapace.ActionMessage("No compiler info: %s", con.UnwrapServerErr(err))
 		}
 
 		var results []string
@@ -89,15 +97,19 @@ func ArchCompleter(con *console.SliverConsoleClient) carapace.Action {
 		}
 
 		return carapace.ActionValues(results...).Tag("architectures")
-	})
+	}).Cache(completers.CacheCompilerInfo)
 }
 
-// FormatCompleter completes build operating systems
-func OSCompleter(con *console.SliverConsoleClient) carapace.Action {
+// FormatCompleter completes build operating systems.
+func OSCompleter(con *console.SliverClient) carapace.Action {
 	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
+		}
+
 		compiler, err := con.Rpc.GetCompiler(context.Background(), &commonpb.Empty{})
 		if err != nil {
-			return carapace.ActionMessage("No compiler info: %s", err.Error())
+			return carapace.ActionMessage("No compiler info: %s", con.UnwrapServerErr(err))
 		}
 
 		var results []string
@@ -123,10 +135,10 @@ func OSCompleter(con *console.SliverConsoleClient) carapace.Action {
 		}
 
 		return carapace.ActionValues(results...).Tag("operating systems")
-	})
+	}).Cache(completers.CacheCompilerInfo)
 }
 
-// FormatCompleter completes build formats
+// FormatCompleter completes build formats.
 func FormatCompleter() carapace.Action {
 	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
 		return carapace.ActionValues([]string{
@@ -135,27 +147,111 @@ func FormatCompleter() carapace.Action {
 	})
 }
 
-// TrafficEncoderCompleter - Completes the names of traffic encoders
-func TrafficEncodersCompleter(con *console.SliverConsoleClient) carapace.Action {
-	return carapace.ActionCallback(func(c carapace.Context) carapace.Action {
-		grpcCtx, cancel := con.GrpcContext(nil)
-		defer cancel()
-		trafficEncoders, err := con.Rpc.TrafficEncoderMap(grpcCtx, &commonpb.Empty{})
-		if err != nil {
-			return carapace.ActionMessage("failed to fetch traffic encoders: %s", err.Error())
+// MsfFormatCompleter completes MsfVenom stager formats.
+func MsfFormatCompleter(con *console.SliverClient) carapace.Action {
+	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
 		}
 
-		results := []string{}
-		for _, encoder := range trafficEncoders.Encoders {
-			results = append(results, encoder.Wasm.Name)
-			skipTests := ""
-			if encoder.SkipTests {
-				skipTests = "[skip-tests]"
+		info, err := con.Rpc.GetMetasploitCompiler(context.Background(), &commonpb.Empty{})
+		if err != nil {
+			return carapace.ActionMessage("failed to fetch Metasploit info: %s", con.UnwrapServerErr(err))
+		}
+
+		var results []string
+
+		for _, fmt := range info.Formats {
+			fmt = strings.TrimSpace(fmt)
+			if fmt == "" {
+				continue
 			}
-			desc := fmt.Sprintf("(Wasm: %s) %s", encoder.Wasm.Name, skipTests)
+
+			results = append(results, fmt)
+
+		}
+
+		return carapace.ActionValues(results...).Tag("msfvenom formats")
+	}).Cache(completers.CacheMsf)
+}
+
+// MsfArchCompleter completes MsfVenom stager architectures.
+func MsfArchCompleter(con *console.SliverClient) carapace.Action {
+	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
+		}
+
+		info, err := con.Rpc.GetMetasploitCompiler(context.Background(), &commonpb.Empty{})
+		if err != nil {
+			return carapace.ActionMessage("failed to fetch Metasploit info: %s", con.UnwrapServerErr(err))
+		}
+
+		var results []string
+
+		for _, arch := range info.Archs {
+			arch = strings.TrimSpace(arch)
+			if arch == "" {
+				continue
+			}
+
+			results = append(results, arch)
+		}
+
+		return carapace.ActionValues(results...).Tag("msfvenom archs")
+	}).Cache(completers.CacheMsf)
+}
+
+// MsfFormatCompleter completes MsfVenom stager encoders.
+func MsfEncoderCompleter(con *console.SliverClient) carapace.Action {
+	return carapace.ActionCallback(func(_ carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
+		}
+
+		info, err := con.Rpc.GetMetasploitCompiler(context.Background(), &commonpb.Empty{})
+		if err != nil {
+			return carapace.ActionMessage("failed to fetch Metasploit info: %s", con.UnwrapServerErr(err))
+		}
+
+		var results []string
+
+		for _, mod := range info.Encoders {
+			results = append(results, mod.FullName)
+
+			level := fmt.Sprintf("%-10s", "["+mod.Quality+"]")
+			desc := fmt.Sprintf("%s %s", level, mod.Description)
+
 			results = append(results, desc)
 		}
 
-		return carapace.ActionValuesDescribed(results...).Tag("traffic encoders")
-	})
+		return carapace.ActionValuesDescribed(results...).Tag("msfvenom encoders")
+	}).Cache(completers.CacheMsf)
+}
+
+// MsfPayloadCompleter completes Metasploit payloads.
+func MsfPayloadCompleter(con *console.SliverClient) carapace.Action {
+	return carapace.ActionCallback(func(c carapace.Context) carapace.Action {
+		if msg, err := con.PreRunComplete(); err != nil {
+			return msg
+		}
+
+		info, err := con.Rpc.GetMetasploitCompiler(context.Background(), &commonpb.Empty{})
+		if err != nil {
+			return carapace.ActionMessage("failed to fetch Metasploit info: %s", con.UnwrapServerErr(err))
+		}
+
+		var results []string
+
+		for _, mod := range info.Payloads {
+			if mod.FullName == "" && mod.Name == "" {
+				continue
+			}
+
+			results = append(results, mod.FullName)
+			results = append(results, mod.Description)
+		}
+
+		return carapace.ActionValuesDescribed(results...)
+	}).Cache(completers.CacheMsf, cache.String("payloads")).MultiParts("/").StyleF(style.ForPath)
 }

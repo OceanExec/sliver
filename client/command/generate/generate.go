@@ -44,28 +44,28 @@ import (
 )
 
 const (
-	// DefaultMTLSLPort is the default port for mtls
+	// DefaultMTLSLPort is the default port for mtls.
 	DefaultMTLSLPort = 8888
-	// DefaultWGPort is the default port for wg
+	// DefaultWGPort is the default port for wg.
 	DefaultWGLPort = 53
-	// DefaultWGNPort is the default n port for wg
+	// DefaultWGNPort is the default n port for wg.
 	DefaultWGNPort = 8888
-	// DefaultWGKeyExPort is the default port for wg key exchange
+	// DefaultWGKeyExPort is the default port for wg key exchange.
 	DefaultWGKeyExPort = 1337
-	// DefaultHTTPLPort is the default port for http
+	// DefaultHTTPLPort is the default port for http.
 	DefaultHTTPLPort = 80
-	// DefaultHTTPSLPort is the default port for https
+	// DefaultHTTPSLPort is the default port for https.
 	DefaultHTTPSLPort = 443
-	// DefaultDNSLPortis the default port for dns
+	// DefaultDNSLPortis the default port for dns.
 	DefaultDNSLPort = 53
-	// DefaultTCPPivotPort is the default port for tcp pivots
+	// DefaultTCPPivotPort is the default port for tcp pivots.
 	DefaultTCPPivotPort = 9898
 
-	// DefaultReconnect is the default reconnect time
+	// DefaultReconnect is the default reconnect time.
 	DefaultReconnect = 60
-	// DefaultPollTimeout is the default poll timeout
+	// DefaultPollTimeout is the default poll timeout.
 	DefaultPollTimeout = 360 // 6 minutes
-	// DefaultMaxErrors is the default max reconnection errors before giving up
+	// DefaultMaxErrors is the default max reconnection errors before giving up.
 	DefaultMaxErrors = 1000
 )
 
@@ -74,7 +74,7 @@ const (
 )
 
 var (
-	// SupportedCompilerTargets - Supported compiler targets
+	// SupportedCompilerTargets - Supported compiler targets.
 	SupportedCompilerTargets = map[string]bool{
 		"darwin/amd64":  true,
 		"darwin/arm64":  true,
@@ -88,8 +88,8 @@ var (
 	ErrNoValidBuilders   = errors.New("no valid external builders for target")
 )
 
-// GenerateCmd - The main command used to generate implant binaries
-func GenerateCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []string) {
+// GenerateCmd - The main command used to generate implant binaries.
+func GenerateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	config := parseCompileFlags(cmd, con)
 	if config == nil {
 		return
@@ -127,7 +127,7 @@ func expandPath(path string) string {
 	return filepath.Join(os.Getenv("HOME"), path[1:])
 }
 
-func saveLocation(save, DefaultName string, con *console.SliverConsoleClient) (string, error) {
+func saveLocation(save, DefaultName string, con *console.SliverClient) (string, error) {
 	var saveTo string
 	if save == "" {
 		save, _ = os.Getwd()
@@ -181,8 +181,8 @@ func nameOfOutputFormat(value clientpb.OutputFormat) string {
 	}
 }
 
-// Shared function that extracts the compile flags from the grumble context
-func parseCompileFlags(cmd *cobra.Command, con *console.SliverConsoleClient) *clientpb.ImplantConfig {
+// Shared function that extracts the compile flags from the grumble context.
+func parseCompileFlags(cmd *cobra.Command, con *console.SliverClient) *clientpb.ImplantConfig {
 	var name string
 	if nameF, _ := cmd.Flags().GetString("name"); nameF != "" {
 		name = strings.ToLower(nameF)
@@ -404,8 +404,8 @@ func parseCompileFlags(cmd *cobra.Command, con *console.SliverConsoleClient) *cl
 	return config
 }
 
-// parseTrafficEncoderArgs - parses the traffic encoder args and returns a bool indicating if traffic encoders are enabled
-func parseTrafficEncoderArgs(cmd *cobra.Command, httpC2Enabled bool, con *console.SliverConsoleClient) (bool, []*commonpb.File) {
+// parseTrafficEncoderArgs - parses the traffic encoder args and returns a bool indicating if traffic encoders are enabled.
+func parseTrafficEncoderArgs(cmd *cobra.Command, httpC2Enabled bool, con *console.SliverClient) (bool, []*commonpb.File) {
 	trafficEncoders, _ := cmd.Flags().GetString("traffic-encoders")
 	encoders := []*commonpb.File{}
 	if trafficEncoders != "" {
@@ -425,7 +425,7 @@ func parseTrafficEncoderArgs(cmd *cobra.Command, httpC2Enabled bool, con *consol
 	return false, encoders
 }
 
-func getTargets(targetOS string, targetArch string, con *console.SliverConsoleClient) (string, string) {
+func getTargets(targetOS string, targetArch string, con *console.SliverClient) (string, string) {
 	/* For UX we convert some synonymous terms */
 	if targetOS == "darwin" || targetOS == "mac" || targetOS == "macos" || targetOS == "osx" {
 		targetOS = "darwin"
@@ -461,7 +461,7 @@ func getTargets(targetOS string, targetArch string, con *console.SliverConsoleCl
 	return targetOS, targetArch
 }
 
-// ParseMTLSc2 - Parse mtls connection string arg
+// ParseMTLSc2 - Parse mtls connection string arg.
 func ParseMTLSc2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -496,7 +496,7 @@ func ParseMTLSc2(args string) ([]*clientpb.ImplantC2, error) {
 	return c2s, nil
 }
 
-// ParseWGc2 - Parse wg connect string arg
+// ParseWGc2 - Parse wg connect string arg.
 func ParseWGc2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -612,7 +612,7 @@ func uriWithoutProxyOptions(uri *url.URL) {
 	uri.RawQuery = options.Encode()
 }
 
-// ParseHTTPc2 - Parse HTTP connection string arg
+// ParseHTTPc2 - Parse HTTP connection string arg.
 func ParseHTTPc2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -658,7 +658,7 @@ func ParseHTTPc2(args string) ([]*clientpb.ImplantC2, error) {
 	return c2s, nil
 }
 
-// ParseDNSc2 - Parse DNS connection string arg
+// ParseDNSc2 - Parse DNS connection string arg.
 func ParseDNSc2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -693,7 +693,7 @@ func ParseDNSc2(args string) ([]*clientpb.ImplantC2, error) {
 	return c2s, nil
 }
 
-// ParseNamedPipec2 - Parse named pipe connection string arg
+// ParseNamedPipec2 - Parse named pipe connection string arg.
 func ParseNamedPipec2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -740,7 +740,7 @@ func ParseNamedPipec2(args string) ([]*clientpb.ImplantC2, error) {
 	return c2s, nil
 }
 
-// ParseTCPPivotc2 - Parse tcp pivot connection string arg
+// ParseTCPPivotc2 - Parse tcp pivot connection string arg.
 func ParseTCPPivotc2(args string) ([]*clientpb.ImplantC2, error) {
 	c2s := []*clientpb.ImplantC2{}
 	if args == "" {
@@ -778,7 +778,7 @@ func ParseTCPPivotc2(args string) ([]*clientpb.ImplantC2, error) {
 	return c2s, nil
 }
 
-func externalBuild(config *clientpb.ImplantConfig, save string, con *console.SliverConsoleClient) (*commonpb.File, error) {
+func externalBuild(config *clientpb.ImplantConfig, save string, con *console.SliverClient) (*commonpb.File, error) {
 	potentialBuilders, err := findExternalBuilders(config, con)
 	if err != nil {
 		return nil, err
@@ -822,7 +822,7 @@ func externalBuild(config *clientpb.ImplantConfig, save string, con *console.Sli
 		BuilderName: externalBuilder.Name,
 	})
 	if err != nil {
-		con.PrintErrorf("%s\n", err)
+		con.PrintErrorf("%s\n", con.UnwrapServerErr(err))
 		return nil, err
 	}
 	con.Printf("done\n")
@@ -882,7 +882,7 @@ func externalBuild(config *clientpb.ImplantConfig, save string, con *console.Sli
 		ImplantName: name,
 	})
 	if err != nil {
-		return nil, err
+		return nil, con.UnwrapServerErr(err)
 	}
 	con.PrintInfof("Build name: %s (%d bytes)\n", name, len(generated.File.Data))
 
@@ -901,7 +901,7 @@ func externalBuild(config *clientpb.ImplantConfig, save string, con *console.Sli
 	return nil, nil
 }
 
-func compile(config *clientpb.ImplantConfig, save string, con *console.SliverConsoleClient) (*commonpb.File, error) {
+func compile(config *clientpb.ImplantConfig, save string, con *console.SliverClient) (*commonpb.File, error) {
 	if config.IsBeacon {
 		interval := time.Duration(config.BeaconInterval)
 		con.PrintInfof("Generating new %s/%s beacon implant binary (%v)\n", config.GOOS, config.GOARCH, interval)
@@ -924,7 +924,7 @@ func compile(config *clientpb.ImplantConfig, save string, con *console.SliverCon
 	ctrl <- true
 	<-ctrl
 	if err != nil {
-		con.PrintErrorf("%s\n", err)
+		con.PrintErrorf("%s\n", con.UnwrapServerErr(err))
 		return nil, err
 	}
 
@@ -949,7 +949,7 @@ func compile(config *clientpb.ImplantConfig, save string, con *console.SliverCon
 				Data:         fileData,
 			})
 			if err != nil {
-				con.PrintErrorf("%s\n", err)
+				con.PrintErrorf("%s\n", con.UnwrapServerErr(err))
 			} else {
 				con.Printf("success!\n")
 				fileData = resp.GetData()
@@ -994,14 +994,14 @@ func getLimitsString(config *clientpb.ImplantConfig) string {
 	return strings.Join(limits, "; ")
 }
 
-func checkBuildTargetCompatibility(format clientpb.OutputFormat, targetOS string, targetArch string, con *console.SliverConsoleClient) bool {
+func checkBuildTargetCompatibility(format clientpb.OutputFormat, targetOS string, targetArch string, con *console.SliverClient) bool {
 	if format == clientpb.OutputFormat_EXECUTABLE {
 		return true // We don't need cross-compilers when targeting EXECUTABLE formats
 	}
 
 	compilers, err := con.Rpc.GetCompiler(context.Background(), &commonpb.Empty{})
 	if err != nil {
-		con.PrintErrorf("Failed to check target compatibility: %s\n", err)
+		con.PrintErrorf("Failed to check target compatibility: %s\n", con.UnwrapServerErr(err))
 		return true
 	}
 
@@ -1035,7 +1035,7 @@ func hasCC(targetOS string, targetArch string, crossCompilers []*clientpb.CrossC
 	return false
 }
 
-func warnMissingCrossCompiler(format clientpb.OutputFormat, targetOS string, targetArch string, con *console.SliverConsoleClient) bool {
+func warnMissingCrossCompiler(format clientpb.OutputFormat, targetOS string, targetArch string, con *console.SliverClient) bool {
 	con.PrintWarnf("Missing cross-compiler for %s on %s/%s\n", nameOfOutputFormat(format), targetOS, targetArch)
 	switch targetOS {
 	case "windows":
@@ -1053,10 +1053,10 @@ func warnMissingCrossCompiler(format clientpb.OutputFormat, targetOS string, tar
 	return confirm
 }
 
-func findExternalBuilders(config *clientpb.ImplantConfig, con *console.SliverConsoleClient) ([]*clientpb.Builder, error) {
+func findExternalBuilders(config *clientpb.ImplantConfig, con *console.SliverClient) ([]*clientpb.Builder, error) {
 	builders, err := con.Rpc.Builders(context.Background(), &commonpb.Empty{})
 	if err != nil {
-		return nil, err
+		return nil, con.UnwrapServerErr(err)
 	}
 	if len(builders.Builders) < 1 {
 		return []*clientpb.Builder{}, ErrNoExternalBuilder
@@ -1079,7 +1079,7 @@ func findExternalBuilders(config *clientpb.ImplantConfig, con *console.SliverCon
 	return validBuilders, nil
 }
 
-func selectExternalBuilder(builders []*clientpb.Builder, con *console.SliverConsoleClient) (*clientpb.Builder, error) {
+func selectExternalBuilder(builders []*clientpb.Builder, con *console.SliverClient) (*clientpb.Builder, error) {
 	choices := []string{}
 	for _, builder := range builders {
 		choices = append(choices, builder.Name)

@@ -35,8 +35,8 @@ import (
 	"github.com/bishopfox/sliver/protobuf/sliverpb"
 )
 
-// ProcdumpCmd - Dump the memory of a remote process
-func ProcdumpCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []string) {
+// ProcdumpCmd - Dump the memory of a remote process.
+func ProcdumpCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	session, beacon := con.ActiveTarget.GetInteractive()
 	if session == nil && beacon == nil {
 		return
@@ -74,13 +74,13 @@ func ProcdumpCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []st
 	ctrl <- true
 	<-ctrl
 	if err != nil {
-		con.PrintErrorf("%s\n", err)
+		con.PrintErrorf("%s\n", con.UnwrapServerErr(err))
 		return
 	}
 
 	hostname := getHostname(session, beacon)
 	if dump.Response != nil && dump.Response.Async {
-		con.AddBeaconCallback(dump.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddBeaconCallback(dump.Response, func(task *clientpb.BeaconTask) {
 			err = proto.Unmarshal(task.Response, dump)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -94,7 +94,6 @@ func ProcdumpCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []st
 				PrintProcessDump(dump, saveTo, hostname, pid, con)
 			}
 		})
-		con.PrintAsyncResponse(dump.Response)
 	} else {
 		if saveLoot {
 			LootProcessDump(dump, lootName, hostname, pid, con)
@@ -106,8 +105,8 @@ func ProcdumpCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []st
 	}
 }
 
-// PrintProcessDump - Handle the results of a process dump
-func PrintProcessDump(dump *sliverpb.ProcessDump, saveTo string, hostname string, pid int, con *console.SliverConsoleClient) {
+// PrintProcessDump - Handle the results of a process dump.
+func PrintProcessDump(dump *sliverpb.ProcessDump, saveTo string, hostname string, pid int, con *console.SliverClient) {
 	var err error
 	var saveToFile *os.File
 	if saveTo == "" {
@@ -139,7 +138,7 @@ func getHostname(session *clientpb.Session, beacon *clientpb.Beacon) string {
 	return ""
 }
 
-func LootProcessDump(dump *sliverpb.ProcessDump, lootName string, hostName string, pid int, con *console.SliverConsoleClient) {
+func LootProcessDump(dump *sliverpb.ProcessDump, lootName string, hostName string, pid int, con *console.SliverClient) {
 	timeNow := time.Now().UTC()
 	dumpFileName := fmt.Sprintf("procdump_%s_%d_%s.dmp", hostName, pid, timeNow.Format("20060102150405"))
 

@@ -34,8 +34,8 @@ import (
 	"github.com/bishopfox/sliver/protobuf/clientpb"
 )
 
-// WebsitesAddContentCmd - Add static content to a website
-func WebsitesAddContentCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []string) {
+// WebsitesAddContentCmd - Add static content to a website.
+func WebsitesAddContentCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	websiteName, _ := cmd.Flags().GetString("website")
 	if websiteName == "" {
 		con.PrintErrorf("Must specify a website name via --website, see --help\n")
@@ -46,11 +46,8 @@ func WebsitesAddContentCmd(cmd *cobra.Command, con *console.SliverConsoleClient,
 		con.PrintErrorf("Must specify a web path via --web-path, see --help\n")
 		return
 	}
-	contentPath, _ := cmd.Flags().GetString("content")
-	if contentPath == "" {
-		con.PrintErrorf("Must specify some --content\n")
-		return
-	}
+
+	contentPath := args[0]
 	contentPath, _ = filepath.Abs(contentPath)
 	contentType, _ := cmd.Flags().GetString("content-type")
 	recursive, _ := cmd.Flags().GetBool("recursive")
@@ -77,7 +74,7 @@ func WebsitesAddContentCmd(cmd *cobra.Command, con *console.SliverConsoleClient,
 
 	web, err := con.Rpc.WebsiteAddContent(context.Background(), addWeb)
 	if err != nil {
-		con.PrintErrorf("%s", err)
+		con.PrintErrorf("%s", con.UnwrapServerErr(err))
 		return
 	}
 	PrintWebsite(web, con)

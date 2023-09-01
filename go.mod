@@ -1,8 +1,15 @@
 module github.com/bishopfox/sliver
 
-go 1.20
+go 1.21
 
-replace github.com/rsteube/carapace v0.36.3 => github.com/reeflective/carapace v0.25.2-0.20230602202234-e8d757e458ca
+// A fork of the completion engine is currently used in order to consume the engine
+// as a library. The fork is a very slightly patched mainline tree for that purpose,
+// and is regularly maintained up-to-date with upstream. Should be removed long-term.
+//
+// To update or try to:
+// - You must replace rsteube/carapace v0.43.0 with the version found in the main require.
+// - You must replace v0.25.2... with "library", then go mod tidy && go mod vendor.
+replace github.com/rsteube/carapace v0.43.0 => github.com/reeflective/carapace v0.25.2-0.20230816093630-a30f5184fa0d
 
 require (
 	filippo.io/age v1.1.1
@@ -16,12 +23,14 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.2
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
+	github.com/fatih/color v1.15.0
 	github.com/glebarez/sqlite v1.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/kbinani/screenshot v0.0.0-20191211154542-3a185f1ce18f
 	github.com/klauspost/compress v1.16.6
 	github.com/lesnuages/go-winio v0.4.19
@@ -30,24 +39,25 @@ require (
 	github.com/miekg/dns v1.1.55
 	github.com/moloch--/asciicast v0.1.0
 	github.com/moloch--/memmod v0.0.0-20211120144554-8b37cc654945
-	github.com/ncruces/go-sqlite3 v0.7.2
-	github.com/reeflective/console v0.1.6
-	github.com/reeflective/readline v1.0.8
-	github.com/rsteube/carapace v0.36.3
+	github.com/ncruces/go-sqlite3 v0.8.4
+	github.com/reeflective/console v0.1.8
+	github.com/reeflective/readline v1.0.9
+	github.com/reeflective/team v0.1.1
+	github.com/rsteube/carapace v0.43.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
-	github.com/tetratelabs/wazero v1.3.1
+	github.com/tetratelabs/wazero v1.4.0
 	github.com/things-go/go-socks5 v0.0.3
 	github.com/xlab/treeprint v1.2.0
 	github.com/yiya1989/sshkrb5 v0.0.0-20201110125252-a1455b75a35e
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.10.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.11.0
-	golang.org/x/sys v0.10.0
-	golang.org/x/term v0.10.0
-	golang.org/x/text v0.11.0
+	golang.org/x/sys v0.11.0
+	golang.org/x/term v0.9.0
+	golang.org/x/text v0.12.0
 	golang.zx2c4.com/wireguard v0.0.0-20220316235147-5aff28b14c24
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220208144051-fde48d68ee68
 	google.golang.org/grpc v1.56.1
@@ -92,7 +102,6 @@ require (
 	github.com/demisto/goxforce v0.0.0-20160322194047-db8357535b1d // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/fatih/color v1.15.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
@@ -121,7 +130,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/josharian/native v1.1.1-0.20230202152459-5c7d0dd6ab86 // indirect
 	github.com/jsimonetti/rtnetlink v1.3.2 // indirect
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kortschak/wol v0.0.0-20200729010619-da482cc4850a // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -134,10 +142,12 @@ require (
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
+	github.com/ncruces/go-sqlite3/gormlite v0.8.4 // indirect
 	github.com/ncruces/julianday v0.1.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/psanford/memfs v0.0.0-20230130182539-4dbf7e3e865e // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/tailscale/certstore v0.1.1-0.20220316223106-78d6e1c49d8d // indirect
@@ -153,8 +163,8 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
+	golang.org/x/mod v0.11.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect

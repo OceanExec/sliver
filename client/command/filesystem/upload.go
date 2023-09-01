@@ -25,9 +25,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/bishopfox/sliver/client/console"
 	"github.com/bishopfox/sliver/protobuf/clientpb"
@@ -35,8 +34,8 @@ import (
 	"github.com/bishopfox/sliver/util/encoders"
 )
 
-// UploadCmd - Upload a file to the remote system
-func UploadCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []string) {
+// UploadCmd - Upload a file to the remote system.
+func UploadCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	session, beacon := con.ActiveTarget.GetInteractive()
 	if session == nil && beacon == nil {
 		return
@@ -92,11 +91,11 @@ func UploadCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []stri
 	ctrl <- true
 	<-ctrl
 	if err != nil {
-		con.PrintErrorf("%s\n", err)
+		con.PrintErrorf("%s\n", con.UnwrapServerErr(err))
 		return
 	}
 	if upload.Response != nil && upload.Response.Async {
-		con.AddBeaconCallback(upload.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddBeaconCallback(upload.Response, func(task *clientpb.BeaconTask) {
 			err = proto.Unmarshal(task.Response, upload)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -104,14 +103,13 @@ func UploadCmd(cmd *cobra.Command, con *console.SliverConsoleClient, args []stri
 			}
 			PrintUpload(upload, con)
 		})
-		con.PrintAsyncResponse(upload.Response)
 	} else {
 		PrintUpload(upload, con)
 	}
 }
 
-// PrintUpload - Print the result of the upload command
-func PrintUpload(upload *sliverpb.Upload, con *console.SliverConsoleClient) {
+// PrintUpload - Print the result of the upload command.
+func PrintUpload(upload *sliverpb.Upload, con *console.SliverClient) {
 	if upload.Response != nil && upload.Response.Err != "" {
 		con.PrintErrorf("%s\n", upload.Response.Err)
 		return
