@@ -539,7 +539,7 @@ github.com/miekg/dns
 # github.com/mitchellh/go-ps v1.0.0
 ## explicit; go 1.13
 github.com/mitchellh/go-ps
-# github.com/moloch--/asciicast v0.1.0
+# github.com/moloch--/asciicast v0.1.1
 ## explicit; go 1.20
 github.com/moloch--/asciicast
 # github.com/moloch--/memmod v0.0.0-20230225130813-fd77d905589e
