@@ -38,6 +38,7 @@ WHERE
 `
 
 var typeAliasMap = map[string][]string{
+	"int":                      {"integer"},
 	"int2":                     {"smallint"},
 	"int4":                     {"integer"},
 	"int8":                     {"bigint"},
@@ -50,6 +51,15 @@ var typeAliasMap = map[string][]string{
 	"timestamp with time zone": {"timestamptz"},
 	"bool":                     {"boolean"},
 	"boolean":                  {"bool"},
+	"serial2":                  {"smallserial"},
+	"serial4":                  {"serial"},
+	"serial8":                  {"bigserial"},
+	"varbit":                   {"bit varying"},
+	"char":                     {"character"},
+	"varchar":                  {"character varying"},
+	"float4":                   {"real"},
+	"float8":                   {"double precision"},
+	"timetz":                   {"time with time zone"},
 }
 
 type Migrator struct {
@@ -130,6 +140,10 @@ func (m Migrator) CreateIndex(value interface{}, name string) error {
 					createIndexSQL += " USING " + idx.Type + "(?)"
 				} else {
 					createIndexSQL += " ?"
+				}
+
+				if idx.Option != "" {
+					createIndexSQL += " " + idx.Option
 				}
 
 				if idx.Where != "" {
@@ -312,7 +326,7 @@ func (m Migrator) AlterColumn(value interface{}, field string) error {
 				fileType := clause.Expr{SQL: m.DataTypeOf(field)}
 				// check for typeName and SQL name
 				isSameType := true
-				if fieldColumnType.DatabaseTypeName() != fileType.SQL {
+				if !strings.EqualFold(fieldColumnType.DatabaseTypeName(), fileType.SQL) {
 					isSameType = false
 					// if different, also check for aliases
 					aliases := m.GetTypeAliases(fieldColumnType.DatabaseTypeName())
@@ -375,9 +389,15 @@ func (m Migrator) AlterColumn(value interface{}, field string) error {
 								return err
 							}
 						} else {
-							if err := m.DB.Exec("ALTER TABLE ? ALTER COLUMN ? DROP DEFAULT", m.CurrentTable(stmt), clause.Column{Name: field.DBName}, clause.Expr{SQL: field.DefaultValue}).Error; err != nil {
+							if err := m.DB.Exec("ALTER TABLE ? ALTER COLUMN ? DROP DEFAULT", m.CurrentTable(stmt), clause.Column{Name: field.DBName}).Error; err != nil {
 								return err
 							}
+						}
+					} else if !field.HasDefaultValue {
+						// case - as-is column has default value and to-be column has no default value
+						// need to drop default
+						if err := m.DB.Exec("ALTER TABLE ? ALTER COLUMN ? DROP DEFAULT", m.CurrentTable(stmt), clause.Column{Name: field.DBName}).Error; err != nil {
+							return err
 						}
 					}
 				}
